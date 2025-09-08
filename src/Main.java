@@ -1,11 +1,15 @@
-import java.util.ArrayList;
-import java.util.EmptyStackException;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         Scanner inputObj = new Scanner(System.in);
-        Stack stack = new Stack();
+        System.out.println("Pilih struktur data (1 = Stack, 2 = Queue): ");
+        int choice = inputObj.nextInt();
+        inputObj.nextLine();
+
+        DataStructure ds;
+        if (choice == 1) ds = new Stack();
+        else ds = new Queue();
 
         while (true) {
             System.out.println("========= Pilih aksi =========");
@@ -13,115 +17,159 @@ public class Main {
             System.out.println("2. Push data");
             System.out.println("3. Pop data");
             System.out.println("4. Swap data");
+            System.out.println("5. Keluar");
             System.out.print("======: ");
-            int choice = inputObj.nextInt();
-            inputObj.nextLine(); // consume newline
+            String act = inputObj.nextLine();
 
             try {
-                switch (choice) {
-                    case 1:
-                        showData(stack);
-                        System.out.println("Enter untuk kembali ke menu");
-                        inputObj.nextLine();
-                        break;
-                    case 2:
-                        addData(stack, inputObj);
-                        break;
-                    case 3:
-                        popData(stack);
-                        break;
-                    case 4:
-                        updateData(stack, inputObj);
-                        break;
-                    default:
-                        System.out.println("Pilihan tidak valid!");
+                switch (act) {
+                    case "1" -> showData(ds);
+                    case "2" -> addData(ds, inputObj);
+                    case "3" -> popData(ds);
+                    case "4" -> {
+                        if (ds instanceof Stack stack) {
+                            swapData(stack, inputObj);
+                        } else if (ds instanceof Queue queue) {
+                            swapData(queue, inputObj);
+                        } else {
+                            System.out.println("Tidak ada struktur data yang terpilih");
+                        }
+                    }
+                    case "5" -> {
+                        System.out.println("Program selesai.");
+                        inputObj.close();
+                        return;
+                    }
+                    default -> System.out.println("Pilihan tidak valid!");
                 }
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("Terjadi error: " + e.getMessage());
             }
         }
     }
 
-    public static void showData(Stack stack) {
-        if (isDataEmpty(stack)) return;
+    public static void showData(DataStructure ds) {
         long startTime = System.nanoTime();
 
-        Stack.Node current = stack.first;
-        int count = stack.getSize();
-
-        System.out.println("|-----------Data stack-----------|");
-        while (current != null) {
-            System.out.println(count + ". " + current.value + " ");
-            current = current.next;
-            count--;
-        }
-        System.out.println("|--------------------------------|");
-
-        System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
-    }
-
-    public static void addData(Stack stack, Scanner inputObj) {
-        while (true) {
-            System.out.println("Masukkan data (kosongkan untuk break): ");
-            String data = inputObj.nextLine();
-
-            if (data.isEmpty()) break;
-
-            long startProgram = System.nanoTime();
-            stack.push(Utils.parseInput(data));
-            System.out.println(Utils.timeSpent(System.nanoTime() - startProgram));
-        }
-    }
-
-    public static boolean isDataEmpty(Stack stack) {
-        long startTime = System.nanoTime();
-        if (!stack.hasPop()) System.out.println("!!!!! Data tidak tersedia !!!!!");
-        System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
-        return !stack.hasPop();
-    }
-
-    public static void popData(Stack stack) {
-        if (isDataEmpty(stack)) return;
-        long startTime = System.nanoTime();
-
-        stack.pop();
-        System.out.println("Data berhasil di-pop");
-
-        System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
-    }
-
-    public static void updateData(Stack stack, Scanner inputObj) {
-        int size = stack.getSize();
-
-        if (isDataEmpty(stack)) return;
-
-        showData(stack);
-        System.out.println("Pilih index data yang ingin diubah!");
-        System.out.print("index=====: ");
-        int changeIndex = inputObj.nextInt();
-        inputObj.nextLine(); // consume newline
-
-        if (changeIndex < 1 || changeIndex > size) {
-            System.out.println("!!! Error: Index out of bound !!!");
+        if (!ds.hasPop()) {
+            System.out.println("!!!!! Data tidak tersedia !!!!!");
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
             return;
         }
 
-        System.out.println("Masukkan data yang akan diubah");
-        System.out.print("NewData===: ");
-        String newData = inputObj.nextLine();
+        boolean isStack = ds instanceof Stack;
 
-        long startTime = System.nanoTime();
+        System.out.println("|-----------Data-----------|");
 
-        ArrayList<Object> tempList = new ArrayList<>();
-        while (stack.hasPop()) tempList.add(stack.pop());
-
-        tempList.set(size - changeIndex, Utils.parseInput(newData));
-
-        for (int i = tempList.size() - 1; i >= 0; i--) {
-            stack.push(tempList.get(i));
+        if (isStack) {
+            // Stack: Tampilkan descending (index tinggi di atas)
+            int count = ds.getSize() - 1;
+            var current = ds.getFirstNode();
+            while (current != null) {
+                System.out.println(count + ". " + current.value);
+                current = current.next;
+                count--;
+            }
+        } else {
+            // Queue: Tampilkan ascending (index rendah di atas)
+            int count = 0;
+            var current = ds.getFirstNode();
+            while (current != null) {
+                System.out.println(count + ". " + current.value);
+                current = current.next;
+                count++;
+            }
         }
 
-        System.out.println("Data pada index " + changeIndex + " berhasil diubah menjadi " + newData);
+        System.out.println("|---------------------------|");
         System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+
+        System.out.print("Tekan Enter untuk melanjutkan...");
+        new Scanner(System.in).nextLine();
+    }
+
+    public static void addData(DataStructure ds, Scanner inputObj) {
+        while (true) {
+            System.out.print("Masukkan data (kosongkan untuk break): ");
+            String data = inputObj.nextLine();
+            if (data.isEmpty()) break;
+
+            long startTime = System.nanoTime();
+            // Parse input menggunakan Utils
+            Object parsedData = Utils.parseInput(data);
+            ds.push(parsedData);
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+        }
+    }
+
+    public static void popData(DataStructure ds) {
+        long startTime = System.nanoTime();
+
+        if (!ds.hasPop()) {
+            System.out.println("!!!!! Data tidak tersedia !!!!!");
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+            return;
+        }
+
+        Object removed = ds.pop();
+        System.out.println("Data berhasil di-pop: " + removed);
+        System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+
+        System.out.print("Tekan Enter untuk melanjutkan...");
+        new Scanner(System.in).nextLine();
+    }
+
+    public static void swapData(Stack stack, Scanner inputObj) {
+        long startTime = System.nanoTime();
+
+        if (stack.getSize() < 2) {
+            System.out.println("!!!!! Minimal harus ada 2 data untuk swap !!!!!");
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+            return;
+        }
+
+        try {
+            System.out.print("Pilih index-1 (0-" + (stack.getSize()-1) + "): ");
+            int index1 = inputObj.nextInt();
+            System.out.print("Pilih index-2 (0-" + (stack.getSize()-1) + "): ");
+            int index2 = inputObj.nextInt();
+            inputObj.nextLine(); // consume newline
+
+            stack.swap(index1, index2);
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+        } catch (Exception e) {
+            System.out.println("Input tidak valid: " + e.getMessage());
+            inputObj.nextLine(); // clear invalid input
+        }
+
+        System.out.print("Tekan Enter untuk melanjutkan...");
+        inputObj.nextLine();
+    }
+
+    public static void swapData(Queue queue, Scanner inputObj) {
+        long startTime = System.nanoTime();
+
+        if (queue.getSize() < 2) {
+            System.out.println("!!!!! Minimal harus ada 2 data untuk swap !!!!!");
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+            return;
+        }
+
+        try {
+            System.out.print("Pilih index-1 (0-" + (queue.getSize()-1) + "): ");
+            int index1 = inputObj.nextInt();
+            System.out.print("Pilih index-2 (0-" + (queue.getSize()-1) + "): ");
+            int index2 = inputObj.nextInt();
+            inputObj.nextLine(); // consume newline
+
+            queue.swap(index1, index2);
+            System.out.println(Utils.timeSpent(System.nanoTime() - startTime));
+        } catch (Exception e) {
+            System.out.println("Input tidak valid: " + e.getMessage());
+            inputObj.nextLine(); // clear invalid input
+        }
+
+        System.out.print("Tekan Enter untuk melanjutkan...");
+        inputObj.nextLine();
     }
 }

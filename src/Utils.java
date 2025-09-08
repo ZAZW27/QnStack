@@ -2,11 +2,11 @@ public class Utils {
     public static Object parseInput(String input){
         try{ // return integer
             return Integer.parseInt(input);
-        }catch (NumberFormatException _){}
+        }catch (NumberFormatException ignored){}
 
         try{ // return double
             return Double.parseDouble(input);
-        }catch (NumberFormatException _){}
+        }catch (NumberFormatException ignored){}
 
         if (input.length() == 1){ // return char
             return input.charAt(0);
